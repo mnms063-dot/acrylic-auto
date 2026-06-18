@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D0F14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AcrylicAuto">
+<title>AcrylicAuto</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0D0F14;color:#E8EBF2;font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+:root{
+  --bg:#0D0F14;--surface:#151820;--card:#1C2030;--border:#252A3A;
+  --accent:#00C8FF;--accent-dim:rgba(0,200,255,0.12);
+  --success:#00E5A0;--success-dim:rgba(0,229,160,0.1);
+  --error:#FF4560;--error-dim:rgba(255,69,96,0.12);
+  --text:#E8EBF2;--muted:#6B7280;--dim:#9CA3AF;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+body{display:flex;flex-direction:column;min-height:100vh;padding-top:var(--safe-top)}
+
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-title{font-size:17px;font-weight:700}
+.brand-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.online{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--success);font-weight:600}
+.online::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+main{flex:1;padding:20px 16px;padding-bottom:calc(20px + var(--safe-bottom));max-width:480px;margin:0 auto;width:100%}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;margin-bottom:14px;overflow:hidden}
+.card-body{padding:18px}
+
+/* ── アップロードゾーン ── */
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .25s;background:var(--card);margin-bottom:14px}
+.drop-zone.drag{border-color:var(--accent);background:var(--accent-dim)}
+.drop-zone.has-file{border-color:var(--success);border-style:solid;background:var(--success-dim)}
+
+/* ── サイズ選択 ── */
+.size-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:none}
+.size-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;margin-bottom:10px}
+.size-current{font-size:14px;font-weight:700;color:var(--accent);float:right}
+.size-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.size-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 4px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dim);transition:all .2s;text-align:center}
+.size-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.size-btn:active{transform:scale(.95)}
+.custom-inputs{display:none;gap:8px;margin-top:8px}
+.custom-inputs.show{display:flex}
+.size-input-wrap{flex:1}
+.size-input-wrap label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px}
+.size-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--text);font-family:inherit;text-align:center}
+.size-input:focus{outline:none;border-color:var(--accent)}
+
+/* ── ボタン ── */
+.btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--accent);color:#000}
+.btn-success{background:var(--success);color:#000}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);padding:12px}
+.btn-ghost:active{border-color:var(--accent);color:var(--accent)}
+
+/* ── 処理ステップ ── */
+.steps{display:flex;flex-direction:column;gap:6px}
+.step{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:13px;opacity:.4;transition:all .4s}
+.step.active{opacity:1;border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.step.done{opacity:1;border-color:var(--success);background:var(--success-dim);color:var(--success)}
+.step-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.step.active .step-dot{animation:blink .7s infinite}
+.progress-wrap{background:var(--border);border-radius:4px;height:6px;overflow:hidden;margin:10px 0}
+.progress-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .5s ease}
+
+/* ── プレビューグリッド ── */
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.preview-cell{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.preview-label{padding:6px 10px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.preview-img{width:100%;aspect-ratio:1;object-fit:contain;display:block;background:repeating-conic-gradient(#1C2030 0% 25%,#151820 0% 50%) 0 0/20px 20px}
+
+/* ── ダウンロードボタン群 ── */
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.dl-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--success-dim);border-color:rgba(0,229,160,.25);border-radius:12px;padding:12px 8px;cursor:pointer;font-family:inherit;color:var(--text);transition:all .2s;text-decoration:none}
+.dl-btn:active{transform:scale(.96);background:var(--success-dim)}
+.dl-icon{font-size:22px}
+.dl-name{font-size:11px;font-weight:700;font-family:monospace}
+.dl-size{font-size:10px;color:var(--success)}
+
+/* ── エラー ── */
+.error-box{background:var(--error-dim);border:1px solid rgba(255,69,96,.3);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--error);margin-bottom:12px;display:none}
+
+/* ── トースト ── */
+#toast{position:fixed;top:calc(var(--safe-top) + 68px);left:16px;right:16px;z-index:999;pointer-events:none}
+.toast-msg{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:toastIn .3s ease;margin-bottom:8px}
+.toast-msg.success{border-color:var(--success);color:var(--success)}
+.toast-msg.error{border-color:var(--error);color:var(--error)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-8px)}}
+
+/* ── スピナー ── */
+.spinner-wrap{position:relative;width:64px;height:64px;margin:0 auto 14px}
+.spinner-ring{position:absolute;inset:0;border:3px solid var(--border);border-radius:50%}
+.spinner-arc{position:absolute;inset:0;border:3px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span style="font-size:22px">🔷</span>
+    <div>
+      <div class="brand-title">AcrylicAuto</div>
+      <div class="brand-sub">キーホルダー データ生成</div>
+    </div>
+  </div>
+  <span class="online">ONLINE</span>
+</header>
+
+<main>
+
+  <!-- ① アップロード画面 -->
+  <div id="screen-upload">
+    <div class="drop-zone" id="drop-zone"
+      ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)"
+      onclick="document.getElementById('file-input').click()">
+      <div style="font-size:48px;margin-bottom:12px" id="dz-icon">⬆️</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px" id="dz-title">ここに写真をドロップ</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6" id="dz-sub">またはタップして選択<br>JPG / PNG / HEIC 対応　最大50MB</div>
+      <div style="font-size:13px;color:var(--success);font-weight:600;margin-top:8px;font-family:monospace" id="dz-filename"></div>
+    </div>
+    <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.heic,.webp,image/*" style="display:none" onchange="onFileSelected(event)">
+
+    <!-- サイズ選択 -->
+    <div class="size-section" id="size-section">
+      <div class="size-label">出力サイズ <span class="size-current" id="size-current">55 × 55 mm</span></div>
+      <div class="size-presets">
+        <button class="size-btn" onclick="setSize(50,50)">50×50</button>
+        <button class="size-btn active" onclick="setSize(55,55)">55×55</button>
+        <button class="size-btn" onclick="setSize(65,65)">65×65</button>
+        <button class="size-btn" onclick="setSize(80,80)">80×80</button>
+        <button class="size-btn" id="btn-custom" onclick="toggleCustom()" style="grid-column:1/-1">カスタム</button>
+      </div>
+      <div class="custom-inputs" id="custom-inputs">
+        <div class="size-input-wrap">
+          <label>幅 (mm)</label>
+          <input type="number" class="size-input" id="custom-w" value="55" min="10" max="200" onchange="updateCustomSize()">
+        </div>
+        <div class="size-input-wrap">
+          <label>高さ (mm)</label>
+          <input type="number" class="size-input" id="custom-h" value="55" min="10" max="200" onchange="updateCustomSize()">
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <button class="btn btn-primary" id="btn-process" onclick="startProcess()" disabled>
+      ✨ AI処理を開始
+    </button>
+  </div>
+
+  <!-- ② 処理中画面 -->
+  <div id="screen-processing" style="display:none">
+    <div class="card">
+      <div class="card-body" style="text-align:center">
+        <div class="spinner-wrap">
+          <div class="spinner-ring"></div>
+          <div class="spinner-arc"></div>
+          <div class="spinner-icon">🤖</div>
+        </div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:6px">AI処理中…</div>
+        <div style="font-size:12px;color:var(--muted)" id="proc-sub">しばらくお待ちください</div>
+        <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+        <div class="steps" id="steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 完了・プレビュー画面 -->
+  <div id="screen-result" style="display:none">
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:48px;margin-bottom:8px">✅</div>
+      <div style="font-size:20px;font-weight:700">生成完了</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px" id="result-info"></div>
+    </div>
+
+    <!-- プレビューグリッド -->
+    <div class="preview-grid">
+      <div class="preview-cell">
+        <div class="preview-label">元の写真</div>
+        <img class="preview-img" id="prev-original" src="" alt="original">
+      </div>
+      <div class="preview-cell">
+        <div class="preview-label">カラー（背景除去）</div>
+        <img class="preview-img" id="prev-color" src="" alt="color">
+      </div>
+      <div class="preview-cell">
+        <div class="preview-label">白版</div>
+        <img class="preview-img" id="prev-white" src="" alt="white">
+      </div>
+      <div class="preview-cell">
+        <div class="preview-label">カットライン</div>
+        <img class="preview-img" id="prev-cutline" src="" alt="cutline" style="background:#0a0f0a">
+      </div>
+    </div>
+
+    <!-- 個別ダウンロード -->
+    <div class="dl-grid" id="dl-grid"></div>
+
+    <!-- ZIPダウンロード -->
+    <button class="btn btn-success" id="btn-zip" onclick="downloadZip()" style="margin-bottom:8px">
+      📦 まとめてダウンロード (ZIP)
+    </button>
+
+    <button class="btn btn-ghost" onclick="reset()">
+      📷 別の写真を処理する
+    </button>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+const STEPS_DEF = [
+  {label:'① アップロード',   sub:'画像をサーバーへ送信中'},
+  {label:'② 背景除去',      sub:'AIが背景を自動除去 (isnet)'},
+  {label:'③ エッジ処理',    sub:'シルエットを最適化中'},
+  {label:'④ サイズ変換',    sub:'指定mmサイズに変換中'},
+  {label:'⑤ カットライン生成',sub:'SVGカットラインを作成中'},
+  {label:'⑥ ファイル生成',  sub:'PDFとZIPを作成中'},
+];
+
+let selectedFile = null;
+let currentJobId = null;
+let widthMm  = 55;
+let heightMm = 55;
+let isCustom = false;
+let elapsedTimer = null;
+
+// ── サイズ選択 ────────────────────────────────────────────────
+function setSize(w, h) {
+  widthMm = w; heightMm = h;
+  document.getElementById('size-current').textContent = `${w} × ${h} mm`;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  isCustom = false;
+  document.getElementById('custom-inputs').classList.remove('show');
+}
+
+function toggleCustom() {
+  isCustom = !isCustom;
+  document.getElementById('custom-inputs').classList.toggle('show', isCustom);
+  if (isCustom) {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-custom').classList.add('active');
+    updateCustomSize();
+  }
+}
+
+function updateCustomSize() {
+  widthMm  = parseFloat(document.getElementById('custom-w').value) || 55;
+  heightMm = parseFloat(document.getElementById('custom-h').value) || 55;
+  document.getElementById('size-current').textContent = `${widthMm} × ${heightMm} mm`;
+}
+
+// ── ファイル選択 ──────────────────────────────────────────────
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (file) setFile(file);
+  e.target.value = '';
+}
+
+function setFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['jpg','jpeg','png','heic','webp'].includes(ext)) {
+    showError('対応形式: JPG / PNG / HEIC'); return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    showError('50MB以下にしてください'); return;
+  }
+  selectedFile = file;
+  hideError();
+
+  const dz = document.getElementById('drop-zone');
+  dz.classList.add('has-file');
+  document.getElementById('dz-icon').textContent = '✅';
+  document.getElementById('dz-title').textContent = '写真を選択しました';
+  document.getElementById('dz-sub').textContent = '';
+  document.getElementById('dz-filename').textContent = file.name;
+  document.getElementById('btn-process').disabled = false;
+  document.getElementById('size-section').style.display = 'block';
+
+  // 元画像プレビュー用に保持
+  window._originalURL = URL.createObjectURL(file);
+}
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag'); }
+function onDragLeave()  { document.getElementById('drop-zone').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault(); onDragLeave();
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+}
+
+// ── 処理 ──────────────────────────────────────────────────────
+async function startProcess() {
+  if (!selectedFile) return;
+
+  show('screen-processing'); hide('screen-upload'); hide('screen-result');
+
+  const stepsEl = document.getElementById('steps');
+  stepsEl.innerHTML = STEPS_DEF.map((s,i) =>
+    `<div class="step" id="step-${i}"><div class="step-dot"></div><div><b>${s.label}</b><div style="font-size:11px;opacity:.7;margin-top:1px">${s.sub}</div></div></div>`
+  ).join('');
+
+  let sec = 0;
+  elapsedTimer = setInterval(() => {
+    sec++;
+    document.getElementById('proc-sub').textContent = `処理中… ${sec}秒`;
+  }, 1000);
+
+  setStep(0, 'active');
+  setProgress(5);
+
+  const form = new FormData();
+  form.append('file', selectedFile);
+  form.append('width_mm', widthMm);
+  form.append('height_mm', heightMm);
+
+  // ステップアニメーション
+  const stepTimes = [500, 4000, 1500, 500, 1000, 1000];
+  let stepIdx = 0;
+  const stepTimer = setInterval(() => {
+    if (stepIdx < STEPS_DEF.length - 1) {
+      setStep(stepIdx, 'done');
+      stepIdx++;
+      setStep(stepIdx, 'active');
+      setProgress(Math.round((stepIdx / STEPS_DEF.length) * 90));
+    }
+  }, stepTimes[stepIdx] || 1500);
+
+  try {
+    const res = await fetch('/process', {
+      method: 'POST',
+      body: form,
+    });
+
+    clearInterval(stepTimer);
+    clearInterval(elapsedTimer);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    currentJobId = data.job_id;
+
+    STEPS_DEF.forEach((_, i) => setStep(i, 'done'));
+    setProgress(100);
+
+    await sleep(400);
+    showResult(data);
+
+  } catch (err) {
+    clearInterval(stepTimer);
+    clearInterval(elapsedTimer);
+    show('screen-upload'); hide('screen-processing');
+    showError(err.message);
+    toast(err.message, 'error');
+  }
+}
+
+function setStep(i, status) {
+  const el = document.getElementById(`step-${i}`);
+  if (el) el.className = `step ${status}`;
+}
+function setProgress(pct) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ── 結果表示 ──────────────────────────────────────────────────
+async function showResult(data) {
+  hide('screen-processing');
+  show('screen-result');
+
+  document.getElementById('result-info').textContent =
+    `${widthMm}mm × ${heightMm}mm @ ${300}DPI`;
+
+  const jid = data.job_id;
+
+  // 元画像
+  if (window._originalURL) {
+    document.getElementById('prev-original').src = window._originalURL;
+  }
+
+  // 生成画像
+  document.getElementById('prev-color').src   = `/preview/${jid}/color`;
+  document.getElementById('prev-white').src   = `/preview/${jid}/white`;
+
+  // カットラインをSVGとして表示
+  const cutlineUrl = `/preview/${jid}/cutline`;
+  document.getElementById('prev-cutline').src = cutlineUrl;
+
+  // 個別ダウンロードボタン
+  const files = [
+    { icon:'🎨', name:'color.png',   url:`/preview/${jid}/color`,   label:'カラー画像' },
+    { icon:'◻️', name:'white.png',   url:`/preview/${jid}/white`,   label:'白版' },
+    { icon:'🔷', name:'cutline.svg', url:`/preview/${jid}/cutline`, label:'カットライン' },
+    { icon:'📄', name:'preview.pdf', url:`/preview/${jid}/pdf`,     label:'PDF' },
+  ];
+
+  document.getElementById('dl-grid').innerHTML = files.map(f => `
+    <a class="dl-btn" href="${f.url}" download="${f.name}">
+      <span class="dl-icon">${f.icon}</span>
+      <span class="dl-name">${f.name}</span>
+      <span class="dl-size">${f.label}</span>
+    </a>
+  `).join('');
+
+  toast('処理完了！', 'success');
+}
+
+function downloadZip() {
+  if (!currentJobId) return;
+  window.location.href = `/preview/${currentJobId}/download`;
+  toast('ZIPダウンロード開始', 'success');
+}
+
+// ── リセット ──────────────────────────────────────────────────
+function reset() {
+  selectedFile = null;
+  currentJobId = null;
+  if (window._originalURL) { URL.revokeObjectURL(window._originalURL); window._originalURL = null; }
+
+  const dz = document.getElementById('drop-zone');
+  dz.classList.remove('has-file','drag');
+  document.getElementById('dz-icon').textContent = '⬆️';
+  document.getElementById('dz-title').textContent = 'ここに写真をドロップ';
+  document.getElementById('dz-sub').textContent = 'またはタップして選択\nJPG / PNG / HEIC 対応　最大50MB';
+  document.getElementById('dz-filename').textContent = '';
+  document.getElementById('btn-process').disabled = true;
+  document.getElementById('size-section').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '0%';
+  hideError();
+
+  show('screen-upload'); hide('screen-processing'); hide('screen-result');
+}
+
+// ── ユーティリティ ────────────────────────────────────────────
+function show(id) { const e=document.getElementById(id); if(e) e.style.display='block'; }
+function hide(id) { const e=document.getElementById(id); if(e) e.style.display='none'; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function showError(msg) { const el=document.getElementById('error-box'); el.textContent='⚠️ '+msg; el.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+
+function toast(msg, type='info') {
+  const icons = {success:'✓',error:'✗',info:'ℹ'};
+  const c = document.getElementById('toast');
+  const t = document.createElement('div');
+  t.className = `toast-msg ${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation='toastOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+</script>
+</body>
+</html>
